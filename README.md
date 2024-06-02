@@ -2,7 +2,7 @@
 
 This is the official repository accompanying the EMNLP 2020 long paper [Reformulating Unsupervised Style Transfer as Paraphrase Generation](https://arxiv.org/abs/2010.05700). This repository contains the accompanying dataset and codebase.
 
-### 关于fork
+### 关于本fork
 
 * 在作者的代码上，我使用 [GossipCop-LLM数据集](https://github.com/junyachen/Data-examples.git)复现了作者的文本风格迁移方法。此数据集使用大模型从真新闻中重生成新闻，这些新闻包含了真，假新闻。这些新闻使用三种不同语气的来讲述，分别是objective(客观地)，emotionally（情绪化），neutral（自然地）。不同语气使用不同的用词偏好和语法偏好，而文本的内容没有发生改变，所以语气可作为一种风格。进而使用此数据集进行风格迁移可以视为一种语气迁移。
 * 在安装、准备数据、训练上等等内容上，本人做法与作者做法有所不同，我使用了中文列出。
@@ -103,7 +103,7 @@ All the main **pretrained models** have been added to the [Google Drive link](ht
 To run a fine-tuning and evaluation script simultaneously with support for hyperparameter tuning, please see the code in `style_paraphrase/schedule.py` and `style_paraphrase/hyperparameters_config.py`. This is customized to SLURM, you might need to mkae minor adjustments for it to work on your cluster. 
 
 ## 推理
-[`style_paraphrase/inference.ipynb`](style_paraphrase/inference.ipynb)
+训练好后将修改文件中模型地址为训练好的模型地址：[`style_paraphrase/inference.ipynb`](style_paraphrase/inference.ipynb)
 
 ## Classifier Training
 
