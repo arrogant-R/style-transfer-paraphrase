@@ -3,6 +3,7 @@ import os
 import sys
 import torch
 import tqdm
+import math
 
 from style_paraphrase.inference_utils import GPT2Generator
 
@@ -39,14 +40,23 @@ for split in ["train", "dev", "test"]:
 
     assert len(data) == len(labels)
 
-    outputs = []
-    for i in tqdm.tqdm(range(0, len(data), args.batch_size), desc="minibatches of {} split done...".format(split)):
-        generations, _ = paraphraser.generate_batch(data[i:i + args.batch_size])
-        outputs.extend(generations)
+    # outputs = []
+    # for i in tqdm.tqdm(range(0, len(data), args.batch_size), desc="minibatches of {} split done...".format(split)):
+    #     generations, _ = paraphraser.generate_batch(data[i:i + args.batch_size])
+    #     outputs.extend(generations)
 
-    outputs = [roberta.bpe.encode(x) for x in outputs]
+    # outputs = [roberta.bpe.encode(x) for x in outputs]
 
-    output_path = os.path.join(args.dataset, split) + ".{}_input0.bpe".format(args.paraphrase_str)
+    # output_path = os.path.join(args.dataset, split) + ".{}_input0.bpe".format(args.paraphrase_str)
+
+    # with open(output_path, "w") as f:
+    #     f.write("\n".join(outputs) + "\n")
+    output_path = os.path.join(args.dataset, split) + ".{}_input0.bpe".format("paraphrase_250")
 
     with open(output_path, "w") as f:
-        f.write("\n".join(outputs) + "\n")
+        for i in tqdm.tqdm(range(0, math.ceil(len(data)/args.batch_size),), desc="minibatches of {} split done...".format(split)):
+            start_index, end_index = i*args.batch_size, (i+1)*args.batch_size
+            generations, _ = paraphraser.generate_batch(data[start_index : end_index ])
+            for x in generations:
+                item = roberta.bpe.encode(x)
+                f.write(item + "\n")

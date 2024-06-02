@@ -1,0 +1,4 @@
+objective 11027
+sensational 4891
+emotionally 4676
+neutral 1544

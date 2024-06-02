@@ -2,8 +2,18 @@
 
 This is the official repository accompanying the EMNLP 2020 long paper [Reformulating Unsupervised Style Transfer as Paraphrase Generation](https://arxiv.org/abs/2010.05700). This repository contains the accompanying dataset and codebase.
 
-## Updates (2021-22)
+### 关于次fork
 
+* 在作者的代码上，我使用 [GossipCop-LLM数据集](https://github.com/junyachen/Data-examples.git)复现了作者的文本风格迁移方法。此数据集使用大模型从真新闻中重生成新闻，这些新闻包含了真，假新闻。这些新闻使用三种不同语气的来讲述，分别是objective(客观地)，emotionally（情绪化），neutral（自然地）。不同语气使用不同的用词偏好和语法偏好，而文本的内容没有发生改变，所以语气可作为一种风格。进而使用此数据集进行风格迁移可以视为一种语气迁移。
+* 在安装、准备数据、训练上等等内容上，本人做法与作者做法有所不同，我使用了中文列出。
+
+### 环境
+* linux ubuntu20.04
+* python 3.8.19
+* cuda 11.2
+* gpu GTX1080ti*4
+
+## Updates (2021-22)
 * Outputs from baseline models ([DLSM](https://arxiv.org/abs/2002.03912); [UNMT](https://arxiv.org/abs/1811.00552); [Transforming Delete, Retrieve, Generate](https://arxiv.org/abs/1908.09368)) have been added to the Google Drive link. Please see [`style_paraphrase/evaluation/README.md`](style_paraphrase/evaluation/README.md) for a script to run evaluation on baselines.
 
 * Thanks to [David Dale](https://github.com/avidale), our CoLA fluency classifier is now available in [HuggingFace](https://huggingface.co/cointegrated/roberta-large-cola-krishna2020). They found this classifier had higher correlation with human judgements compared to other CoLA models (details in [issue #36](https://github.com/martiansideofthemoon/style-transfer-paraphrase/issues/36)).
@@ -33,7 +43,26 @@ pip install --editable .
 
 cd fairseq
 pip install --editable .
+
+#fairseq安装失败，可以直接使用pip或者conda安装。
+
 ```
+由于未知原因 使用作者给出的安装方法ordered-set-stubs安装失败，我使用了源码安装。
+```
+git clone https://github.com/rominf/ordered-set-stubs.git
+```
+此外还需要安装apex
+```
+git clone https://github.com/NVIDIA/apex.git
+cd apex
+pip install .
+```
+需要安装transformer老版本 
+```
+cd transformers
+pip install .
+```
+
 
 To process custom datasets and run the classifier, you will need to download RoBERTA. Download the RoBERTa checkpoints from [here](https://github.com/pytorch/fairseq/tree/master/examples/roberta#pre-trained-models). Alternatively, you could follow the commands below. If you want a smaller model, you can also setup a ROBERTA_BASE variable using a similar process.
 
@@ -44,21 +73,26 @@ tar -xzvf roberta.large.tar.gz
 # Add the following to your .bashrc file, feel free to store the model elsewhere on the hard disk
 export ROBERTA_LARGE=$PWD/roberta.large
 ```
+这个roberta-large主要的作用是将文本编码为bpe格式。（后续还可以用来训练为文本风格分类器用来评价风格迁移模型的好坏。）
 
 ## Datasets
 
 All datasets will be added to this [Google Drive link](https://drive.google.com/drive/folders/12ImHH2kJKw1Vs3rDUSRytP3DZYcHdsZw?usp=sharing). Download the datasets and place them under `datasets`. The datasets currently available are (with their folder names),
 
-1. ParaNMT-50M filtered down to 75k pairs - `datasets/paranmt_filtered`
+1. ParaNMT-50M filtered down to 75k pairs - `datasets/paranmt_filtered`<br>这个语料库用来微调paraphraser。paraphraser我们直接使用作者提供的训练好的模型就可以。
+
 2. Shakespeare style transfer - `datasets/shakespeare`
 3. Formality transfer - Please follow the instructions [here](https://github.com/raosudha89/GYAFC-corpus). Once you have access to the corpus, you could email me ([kalpesh@cs.umass.edu](mailto:kalpesh@cs.umass.edu)) to get access to the preprocessed version. We will also add scripts to preprocess the raw data.
 4. Corpus of Diverse Styles - `datasets/cds`. Samples can be found in [`samples/data_samples`](samples/data_samples). Please cite the [original sources](https://arxiv.org/pdf/2010.05700.pdf#page=24) as well if you plan to use this dataset.
+<br>此CDS语料库是作者提出的11中不同风格文本语料库，质量不错。
 
 ## Training / Pretrained Models
 
 1. To train the paraphrase model, run [`style_paraphrase/examples/run_finetune_paraphrase.sh`](style_paraphrase/examples/run_finetune_paraphrase.sh).
+<br>paraphrase使用ParaNMT-50M语料库微调。将文本转为无风格的文本（直白的文本风格），这个效果在Custom Datasets的第四点中实现。
 
 2. To train the inverse paraphrasers for Shakespeare, check the two scripts in [`style_paraphrase/examples/shakespeare`](style_paraphrase/examples/shakespeare).
+<br> 复现内容主要是这一步。为了了解作者提出方法的训练过程和方便调试, 我将关键代码提取到notebook[`style_paraphrase/inverse_paraphraser_train.ipynb`](style_paraphrase/inverse_paraphraser_train.ipynb)中执行。需要提前下载gpt2-large模型。
 
 3. To train the inverse paraphrasers for Formality, check the two scripts in [`style_paraphrase/examples/formality`](style_paraphrase/examples/formality). Note that you will need to email me asking for the preprocessed dataset once you have access to the GYAFC corpus (see instructions in Datasets section).
 
@@ -67,6 +101,9 @@ All datasets will be added to this [Google Drive link](https://drive.google.com/
 All the main **pretrained models** have been added to the [Google Drive link](https://drive.google.com/drive/folders/12ImHH2kJKw1Vs3rDUSRytP3DZYcHdsZw?usp=sharing).
 
 To run a fine-tuning and evaluation script simultaneously with support for hyperparameter tuning, please see the code in `style_paraphrase/schedule.py` and `style_paraphrase/hyperparameters_config.py`. This is customized to SLURM, you might need to mkae minor adjustments for it to work on your cluster. 
+
+## 推理
+[`style_paraphrase/inference.ipynb`](style_paraphrase/inference.ipynb)
 
 ## Classifier Training
 
@@ -87,9 +124,13 @@ Classifiers are needed to evaluate style transfer performance. To train the clas
 
 Please check [`style_paraphrase/evaluation/README.md`](style_paraphrase/evaluation/README.md) for more details.
 
+
 ## Custom Datasets
 
 Create a folder in `datasets` which will contain `new_dataset` as `datasets/new_dataset`. Paste your plaintext train/dev/test splits into this folder as `train.txt`, `dev.txt`, `test.txt`. Use one instance per line (note that the model truncates sequences longer than 50 subwords). Add `train.label`, `dev.label`, `test.label` files (with same number of lines as `train.txt`, `dev.txt`, `test.txt`). These files will contain the style label of the corresponding instance. See [this folder](https://drive.google.com/drive/folders/1a7SS3n9Ds3PEcDH7o3rZnWr-AAkVKYZw?usp=sharing) for examples of label files.
+
+在[`datasets/GrossipCop-preprocess.ipynb`](datasets/GrossipCop-preprocess.ipynb)文件中，保存着我逐步提取文件GrossipCop语气风格的过程记录并保存为作者要求的格式的代码。
+
 
 1. To convert a plaintext dataset into it's BPE form run the command,
 
@@ -104,20 +145,28 @@ Note that this process is reversible. To convert a BPE file back into its raw te
 ```
 datasets/bpe2binary.sh datasets/new_dataset
 ```
+* 这一步我提前下载了并修改了环境变量也没用，还是会在第一次运行中，自动下载roberta模型文件（跟fairseq版本有关，我安装的最新版）。国内下载比较慢，容易出错，重复几次就可以。
+
 
 3. To train inverse paraphrasers you will need to paraphrase the dataset. First, download the pretrained model `paraphraser_gpt2_large` from [here](https://drive.google.com/drive/folders/12ImHH2kJKw1Vs3rDUSRytP3DZYcHdsZw?usp=sharing). After downloading the pretrained paraphrase model run the command,
 
 ```
 python datasets/paraphrase_splits.py --dataset datasets/new_dataset
 ```
+* 因为我的机器比较差，为了保证程序出bug时依然能够保存程序出错之前得出结果，我在原脚本文件（datasets/paraphrase_splits.py）中做出了改动。
+
+
 
 4. Add an entry to the `DATASET_CONFIG` dictionary in [`style_paraphrase/dataset_config.py`](style_paraphrase/dataset_config.py), customizing configuration if needed.
 
 ```
 "datasets/new_dataset": BASE_CONFIG
 ```
+* 直接在对应文件的字典文件中添加该键值对就可以。（已在文件中修改。）
 
 5. Enter your dataset in the hyperparameters [file](https://github.com/martiansideofthemoon/style-transfer-paraphrase/blob/master/style_paraphrase/hyperparameters_config.py#L23) and run `python style_paraphrase/schedule.py`.
+
+* 这些步骤产生文件保存在[`datasets/new_dataset`](datasets/new_dataset)当中。
 
 ### Custom Paraphrase data
 
